@@ -1,0 +1,12 @@
+# Ansible inventory file in YAML format
+# See documentation at https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#assigning-a-variable-to-many-machines-group-variables
+
+all:
+  hosts:
+    # Here we list the targets that Ansible will ssh into to do things.
+    gitlab-vm:
+      ansible_host: cdhvm0024.xaas.epfl.ch
+      ansible_user: root
+  vars:
+    # Here we can set variables that apply to all hosts.
+    ansible_python_interpreter: /usr/bin/python3
