@@ -1,0 +1,5 @@
+- name: Access for Sylvain Cardin
+  authorized_key:
+    state: present
+    user: root
+    key: https://github.com/scardin.keys

@@ -1,0 +1,6 @@
+# Immediately call out to another task file
+#
+# We do this, so that we don't end up with most files open in the code
+# editor being named main.yml
+
+- import_tasks: gitlab-vm-infrastructure-tasks.yml
