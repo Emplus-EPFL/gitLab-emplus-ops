@@ -83,6 +83,6 @@ case "$mode" in
                          playbook.yml
         ;;
     ansible)
-        ansible $(inventories) $ansible_flags "${ansible_args[@]}"
+        ansible -i inventory.yml $ansible_flags "${ansible_args[@]}"
         ;;
 esac
