@@ -3,4 +3,6 @@
 # We do this, so that we don't end up with most files open in the code
 # editor being named main.yml
 
+- include_vars: gitlab-vm-vars.yml
+
 - import_tasks: gitlab-vm-infrastructure-tasks.yml

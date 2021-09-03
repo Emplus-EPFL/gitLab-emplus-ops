@@ -1,5 +1,7 @@
-- name: Access for Sylvain Cardin
+- name: Access
   authorized_key:
     state: present
     user: root
-    key: https://github.com/scardin.keys
+    key: '{{ item }}'
+  with_items:
+    - '{{ gitlab_ssh_access_keys }}'  # As found in ../vars/gitlab-vm-vars.yml

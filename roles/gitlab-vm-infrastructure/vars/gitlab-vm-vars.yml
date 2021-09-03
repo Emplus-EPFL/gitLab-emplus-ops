@@ -1,0 +1,3 @@
+gitlab_ssh_access_keys:
+  - https://github.com/scardin.keys    # Sylvain Cardin
+  - https://github.com/pikkle.keys     # Loïc Sérafin
