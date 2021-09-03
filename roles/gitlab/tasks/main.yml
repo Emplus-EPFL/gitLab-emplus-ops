@@ -1,0 +1,6 @@
+- include_vars: secrets.yml
+
+- name: PostgreSQL database password
+  copy:
+    dest: /root/PASSWORD
+    content: '{{ postgresql_database_password }}'
