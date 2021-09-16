@@ -1,3 +1,6 @@
 gitlab_ssh_access_keys:
   - https://github.com/scardin.keys    # Sylvain Cardin
   - https://github.com/pikkle.keys     # Loïc Sérafin
+
+gitlab_vm_dedicated_disk: /dev/sdb
+gitlab_vm_dedicated_vg: gitlab-vg

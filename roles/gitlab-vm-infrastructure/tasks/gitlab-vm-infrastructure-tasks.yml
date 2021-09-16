@@ -5,3 +5,6 @@
     key: '{{ item }}'
   with_items:
     - '{{ gitlab_ssh_access_keys }}'  # As found in ../vars/gitlab-vm-vars.yml
+
+- import_tasks: gitlab-vm-filesystems.yml
+  tags: fs

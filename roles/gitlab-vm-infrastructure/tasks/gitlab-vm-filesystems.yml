@@ -1,0 +1,12 @@
+- name: "Single primary partition on {{ gitlab_vm_dedicated_disk }}"
+  community.general.parted:
+    device: "{{ gitlab_vm_dedicated_disk }}"
+    label: gpt
+    number: 1
+    flags: [ lvm ]
+    state: present
+
+- name: "{{ gitlab_vm_dedicated_vg }} volume group"
+  community.general.lvg:
+    vg: "{{ gitlab_vm_dedicated_vg }}"
+    pvs: "{{ gitlab_vm_dedicated_disk }}1"
