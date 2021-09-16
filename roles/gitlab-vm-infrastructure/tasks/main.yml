@@ -4,5 +4,6 @@
 # editor being named main.yml
 
 - include_vars: gitlab-vm-vars.yml
+  tags: always
 
 - import_tasks: gitlab-vm-infrastructure-tasks.yml
