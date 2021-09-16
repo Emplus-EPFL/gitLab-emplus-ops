@@ -10,3 +10,25 @@
   community.general.lvg:
     vg: "{{ gitlab_vm_dedicated_vg }}"
     pvs: "{{ gitlab_vm_dedicated_disk }}1"
+
+- name: "Volumes on {{ gitlab_vm_dedicated_vg }}"
+  community.general.lvol:
+    vg: "{{ gitlab_vm_dedicated_vg }}"
+    lv: "{{ item.name }}"
+    size: "{{ item.size }}"
+    shrink: no
+  with_items: "{{ gitlab_vm_volumes }}"
+
+- name: "Filesystems on {{ gitlab_vm_dedicated_vg }}"
+  community.general.filesystem:
+    fstype: "{{ gitlab_vm_dedicated_vg_fstype }}"
+    dev: "{{ _gitlab_vm_device_mapper_path_of_item }}"
+  with_items: "{{ gitlab_vm_volumes }}"
+
+- name: "Mount points for {{ gitlab_vm_dedicated_vg }}"
+  ansible.posix.mount:
+    path: "{{ item.mount }}"
+    src: "{{ _gitlab_vm_device_mapper_path_of_item }}"
+    fstype: "{{ gitlab_vm_dedicated_vg_fstype }}"
+    state: mounted
+  with_items: "{{ gitlab_vm_volumes }}"

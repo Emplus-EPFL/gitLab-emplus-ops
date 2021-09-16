@@ -4,3 +4,17 @@ gitlab_ssh_access_keys:
 
 gitlab_vm_dedicated_disk: /dev/sdb
 gitlab_vm_dedicated_vg: gitlab-vg
+gitlab_vm_dedicated_vg_fstype: ext4
+
+gitlab_vm_volumes:
+  - name: varlibdocker
+    mount: /var/lib/docker
+    size: 30G
+  - name: gitlab
+    mount: /srv/gitlab
+    size: 2G
+  - name: postgres
+    mount: /srv/gitlab/postgresql
+    size: 100%FREE
+
+_gitlab_vm_device_mapper_path_of_item: "/dev/{{ gitlab_vm_dedicated_vg }}/{{ item.name }}"
