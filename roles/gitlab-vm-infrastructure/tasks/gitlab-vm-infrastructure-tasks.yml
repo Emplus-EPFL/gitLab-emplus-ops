@@ -8,3 +8,6 @@
 
 - import_tasks: gitlab-vm-filesystems.yml
   tags: fs
+
+- import_tasks: gitlab-vm-docker.yml
+  tags: docker
