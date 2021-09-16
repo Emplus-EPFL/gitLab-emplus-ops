@@ -25,3 +25,15 @@
     - docker-ce-cli
 
 # No need to start the service - Ubuntu's package manager takes care of that
+
+- name: Pip (Python package manager)
+  ansible.builtin.apt:
+    pkg:
+      - python3-pip
+
+- name: Docker Python APIs
+  ansible.builtin.pip:
+    name:
+      - docker
+      - requests
+    state: latest
