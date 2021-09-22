@@ -5,3 +5,33 @@ serving_config_dir: "/srv/gitlab/config/{{ inventory_hostname }}"
 environment_name: >-
   {{ "prod" if inventory_hostname == "gitlabprod"
      else "staging" }}
+
+keybase_topdir: /keybase/team/emplus_epfl.gitlab
+
+serving_hostname: >-
+  {{ gitlab_docker_prod_hostname if inventory_hostname == "gitlabprod"
+     else inventory_hostname }}
+
+serving_gitlab_rb_config_path: "{{ serving_config_dir }}/gitlab/gitlab.rb"
+serving_gitlab_secrets_dir: /srv/gitlab/secrets/{{ inventory_hostname }}
+serving_gitlab_ssh_secrets_dir: "{{ serving_gitlab_secrets_dir }}/ssh"
+serving_gitlab_json_secrets_file: "{{ serving_gitlab_secrets_dir }}/gitlab-secrets.json"
+
+ssh_secrets:
+  ssh_host_rsa_key: >
+    {{ lookup("file", "{{ keybase_topdir }}/ssh/ssh_host_rsa_key") }}
+  ssh_host_rsa_key.pub: >
+    {{ lookup("file", "{{ keybase_topdir }}/ssh/ssh_host_rsa_key.pub") }}
+  ssh_host_ecdsa_key: >
+    {{ lookup("file", "{{ keybase_topdir }}/ssh/ssh_host_ecdsa_key") }}
+  ssh_host_ecdsa_key.pub: >
+    {{ lookup("file", "{{ keybase_topdir }}/ssh/ssh_host_ecdsa_key.pub") }}
+  ssh_host_ed25519_key: >
+    {{ lookup("file", "{{ keybase_topdir }}/ssh/ssh_host_ed25519_key") }}
+  ssh_host_ed25519_key.pub: >
+    {{ lookup("file", "{{ keybase_topdir }}/ssh/ssh_host_ed25519_key.pub") }}
+
+_keybase_secrets: >-
+  {{ lookup("file", "{{ keybase_topdir }}/secrets.yml") | from_yaml }}
+
+gitlab_secrets: "{{ _keybase_secrets.gitlab }}"

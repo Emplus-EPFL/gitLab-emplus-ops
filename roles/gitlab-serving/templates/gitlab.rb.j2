@@ -1,0 +1,108 @@
+# Configuration file to go in /etc/gitlab/gitlab.rb
+#
+# These values are fed into the Chef configuration in the so-called
+# Omnibus system
+# (/opt/gitlab/embedded/cookbooks/cache/cookbooks/gitlab/templates/default/gitlab.yml.erb)
+# to produce various configuration files, and in particular
+# /opt/gitlab/embedded/nodes/gitlab.json
+#
+# See instructions and a complete example at
+# https://github.com/gitlabhq/omnibus-gitlab/blob/master/files/gitlab-config-template/gitlab.rb.template
+#
+# To effect changes in this file, you have to restart the Docker
+# container. Note: the documented instruction ("gitlab-ctl
+# reconfigure") does *not* work because gitlab.rb is mounted as a
+# single-file volume, and the changes to it are *not* visible from
+# already-running Docker containers (unlike what would happen if the
+# volume was a directory)
+{% if (is_kubernetes | default(False)) %}
+external_url 'https://{{ k8s_serving_hostname }}/'
+{% else %}
+external_url (ENV["ENVIRONMENT"] == "staging" ? 'https://gitlab.epfl.ch:444/' : 'https://gitlab.epfl.ch/')
+{% endif %}
+nginx['listen_port'] = 80
+nginx['listen_https'] = false
+nginx['proxy_set_headers'] = {
+  "X-Forwarded-Proto" => "https",
+  "X-Forwarded-Ssl" => "on"
+}
+
+gitlab_rails['smtp_enable'] = ENV["ENVIRONMENT"] != "staging"
+gitlab_rails['smtp_address'] = "mail.epfl.ch"
+gitlab_rails['gitlab_email_from'] = 'noreply@epfl.ch'
+# You don't want the default setting, and there appears to be no way to not set a reply-to at all:
+gitlab_rails['gitlab_email_reply_to'] = 'noreply@epfl.ch'
+
+postgresql['enable'] = false
+gitlab_rails['db_adapter'] = "postgresql"
+gitlab_rails['db_encoding'] = "unicode"
+gitlab_rails['db_collation'] = nil
+gitlab_rails['db_database'] = "{{ postgresql_database_name }}"
+gitlab_rails['db_pool'] = 10
+gitlab_rails['db_username'] = "gitlab"
+{% if (is_kubernetes | default(False)) %}
+gitlab_rails['db_host'] = 'pgbouncer'
+gitlab_rails['db_port'] = 6432
+gitlab_rails['db_password'] =  File.read("/secrets/external/gitlab_rails_db_password.txt")
+{% else %}
+gitlab_rails['db_host'] = nil
+gitlab_rails['db_port'] = 5432
+gitlab_rails['db_password'] = nil
+gitlab_rails['db_sslmode'] = nil
+gitlab_rails['db_socket'] = nil
+gitlab_rails['db_sslrootcert'] = nil
+{% endif %}
+
+redis['enable'] = false
+{% if (is_kubernetes | default(False)) %}
+gitlab_rails['redis_host'] = "redis"
+gitlab_rails['redis_password'] = File.read("/secrets/external/gitlab_rails_redis_password.txt")
+{% else %}
+gitlab_rails['redis_socket'] = "/var/opt/gitlab/redis/redis.socket"
+{% endif %}
+
+gitlab_rails['omniauth_enabled'] = true
+gitlab_rails['omniauth_allow_single_sign_on'] = true
+gitlab_rails['omniauth_block_auto_created_users'] = false
+gitlab_rails['omniauth_providers'] = [
+  {
+    "name" => "tequila",
+    "args" => {
+      "request_info" => {name: 'displayname', email: 'email', nickname: 'username'},
+      "service_name" => "gitlab",
+      "additional_parameters" => {
+              allows: "categorie=epfl-guests"
+       },
+{% if (is_kubernetes | default(False)) %}
+       "additional_fetchattributes_parameters" => {
+              allowedrequesthosts: "{{ k8s_gitlab_tequila_client_ipv4_range }}"
+       }
+{% endif %}
+    }
+  }
+]
+
+gitlab_exporter['enable'] = true
+gitlab_rails['monitoring_whitelist'] = ['127.0.0.0/8', '10.0.0.0/8']
+
+prometheus['enable'] = true # Default
+prometheus['monitor_kubernetes'] = false
+prometheus['flags']['storage.tsdb.retention.time'] = "48h"
+prometheus['flags']['web.listen-address'] = "0.0.0.0:9090"
+
+prometheus_monitoring['enable'] = true # Default
+node_exporter['enable'] = true
+{% if (is_kubernetes | default(False)) %}
+{# It looks like the Redis exporter insists on connecting to
+ # a local UNIX domain socket. Oh well. #}
+redis_exporter['enable'] = false
+{% else %}
+redis_exporter['enable'] = true
+{% endif %}
+postgres_exporter['enable'] = false
+pgbouncer_exporter['enable'] = true
+
+mattermost['gitlab_enable'] = false
+{% if (is_kubernetes | default(False)) %}{# For now #}
+eval(File.read "/secrets/internal/gitlab-secrets.rb")
+{% endif %}

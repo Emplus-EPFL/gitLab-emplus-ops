@@ -2,3 +2,10 @@ postgresql_container_name:
   staging: "postgresql_staging"
   prod: "postgresql_prod"
 docker_network_name: "gitlab"
+
+_gitlab_version_underscored: "{{ gitlab_version | regex_replace('\\.', '_') }}"
+
+gitlab_docker_prod_hostname: >-
+    gitlabprod_v{{ _gitlab_version_underscored }}_1
+
+gitlab_docker_staging_hostname: gitlabstaging

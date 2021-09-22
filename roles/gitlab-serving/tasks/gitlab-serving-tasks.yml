@@ -38,3 +38,12 @@
     apply:
       tags:
         - databases
+
+- name: Serving containers
+  tags:
+    - serving
+  include_tasks:
+    file: serving.yml
+    apply:
+      tags:
+        - serving

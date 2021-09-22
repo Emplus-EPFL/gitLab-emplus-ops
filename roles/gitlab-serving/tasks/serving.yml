@@ -1,0 +1,90 @@
+- include_vars: "{{ item }}"
+  tags: always
+  with_items:
+    - serving-vars.yml
+    # From the top-level vars/ directory:
+    - database-names.yml
+
+- name: "Configuration directories"
+  file:
+    state: directory
+    path: "{{ item }}"
+  with_items: >-
+      {{ [
+             (serving_gitlab_rb_config_path | dirname),
+             serving_gitlab_ssh_secrets_dir
+         ] | unique
+      }}
+
+- name: "{{ serving_gitlab_rb_config_path }}"
+  copy:
+    dest: "{{ serving_gitlab_rb_config_path }}"
+    content: '{{ lookup("template", "gitlab.rb.j2") }}'
+
+- name: ssh server keys
+  with_items: "{{ ssh_secrets | iteritems }}"
+  no_log: true
+  copy:
+    dest: "{{ serving_gitlab_ssh_secrets_dir }}/{{ item.k }}"
+    content: "{{ item.v }}"
+    mode: >
+      {{ "0644" if ".pub" in item.k else "0600" }}
+
+- name: "{{ serving_gitlab_json_secrets_file }}"
+  no_log: true
+  copy:
+    dest: "{{ serving_gitlab_json_secrets_file }}"
+    content: |
+      {{ gitlab_secrets | to_nice_json }}
+
+- name: "{{ serving_hostname }}"
+  docker_container:
+    name: "{{ serving_hostname }}"
+    image: "{{ gitlab_image_name }}"
+    detach: yes
+    restart_policy: unless-stopped
+    env:
+      ENVIRONMENT: "{{ environment_name }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+    container_default_behavior: no_defaults
+    volumes:
+      # Rebuildable from Ansible
+      - "{{ serving_gitlab_ssh_secrets_dir }}/ssh_host_dsa_key:/etc/gitlab/ssh_host_dsa_key:ro"
+      - "{{ serving_gitlab_ssh_secrets_dir }}/ssh_host_dsa_key.pub:/etc/gitlab/ssh_host_dsa_key.pub:ro"
+      - "{{ serving_gitlab_ssh_secrets_dir }}/ssh_host_key:/etc/gitlab/ssh_host_key:ro"
+      - "{{ serving_gitlab_ssh_secrets_dir }}/ssh_host_key.pub:/etc/gitlab/ssh_host_key.pub:ro"
+      - "{{ serving_gitlab_ssh_secrets_dir }}/ssh_host_ecdsa_key:/etc/gitlab/ssh_host_ecdsa_key:ro"
+      - "{{ serving_gitlab_ssh_secrets_dir }}/ssh_host_ecdsa_key.pub:/etc/gitlab/ssh_host_ecdsa_key.pub:ro"
+      - "{{ serving_gitlab_ssh_secrets_dir }}/ssh_host_ed25519_key:/etc/gitlab/ssh_host_ed25519_key:ro"
+      - "{{ serving_gitlab_ssh_secrets_dir }}/ssh_host_ed25519_key.pub:/etc/gitlab/ssh_host_ed25519_key.pub:ro"
+      - "{{ serving_gitlab_ssh_secrets_dir }}/ssh_host_rsa_key:/etc/gitlab/ssh_host_rsa_key:ro"
+      - "{{ serving_gitlab_ssh_secrets_dir }}/ssh_host_rsa_key.pub:/etc/gitlab/ssh_host_rsa_key.pub:ro"
+      - "{{ serving_gitlab_json_secrets_file }}:/etc/gitlab/gitlab-secrets.json"
+      - "{{ serving_gitlab_rb_config_path }}:/etc/gitlab/gitlab.rb"
+      # Precious
+      - "/srv/gitlab/data/git-data:/var/opt/gitlab/git-data"
+      - "/srv/gitlab/data/ssh_user_public_keys:/var/opt/gitlab/.ssh"
+      - "/srv/gitlab/data/shared:/var/opt/gitlab/gitlab-rails/shared"
+      - "/srv/gitlab/data/uploads:/var/opt/gitlab/gitlab-rails/uploads"
+      - "/srv/gitlab/data/gitlab-ci/builds:/var/opt/gitlab/gitlab-ci/builds"
+      # UNIX sockets
+      - "/srv/gitlab/run/redis-socket-{{ environment_name }}:/var/opt/gitlab/redis"
+      - "/srv/gitlab/run/postgres-socket-{{ environment_name }}:/var/opt/gitlab/postgresql"
+    network_mode: "{{ docker_network_name }}"
+
+- name: "Wait for {{ serving_hostname }} to become healthy"
+  changed_when: false
+  command: >
+    docker inspect  --format '{{ "{{" }} .State.Health.Status }}' {{ serving_hostname }}
+  register: _serving_healthy
+  until: >
+    ansible_check_mode or (
+       ("unhealthy" not in _serving_healthy.stdout)
+       and
+       ("healthy" in _serving_healthy.stdout)
+    )
+  retries: 20
+  delay: 30
