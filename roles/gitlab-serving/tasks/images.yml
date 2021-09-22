@@ -1,0 +1,28 @@
+- include_vars: image-vars.yml
+  tags: always
+
+- name: "{{ image_serving_build_dir | dirname }}"
+  file:
+    state: directory
+    path: "{{ image_serving_build_dir | dirname }}"
+
+- name: "{{ image_serving_build_dir }}"
+  git:
+    repo: https://gitlab.com/epfl-idevfsd/gitlab-docker.git
+    dest: '{{ image_serving_build_dir }}'
+  register: _serving_build_dir
+
+- name: "{{ gitlab_image_name }}"
+  docker_image:
+    name: "{{ gitlab_image_name }}"
+    source: build
+    force_source: yes
+    build:
+      args:
+        GITLAB_CE_BASE_VERSION: "{{ gitlab_version }}-ce.0"
+      pull: no     # Don't re-pull
+      path: '{{ image_serving_build_dir }}/gitlab-main'
+  register: _serving_image
+  tags:
+   - images.build
+   - image.build

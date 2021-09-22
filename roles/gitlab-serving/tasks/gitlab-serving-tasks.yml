@@ -1,3 +1,19 @@
+- include_vars: serving-vars.yml
+  tags: always
+
 - name: Common infrastructure
   import_tasks: infrastructure.yml
   tags: serving.infrastructure
+
+- name: Serving images
+  when: >
+    inventory_hostname == "gitlabstaging"
+  include_tasks:
+    file: images.yml
+    apply:
+      tags:
+        - images
+  tags:
+    - images
+    - images.build
+    - image.build
