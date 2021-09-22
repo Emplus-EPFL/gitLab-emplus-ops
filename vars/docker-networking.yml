@@ -1,0 +1,4 @@
+postgresql_container_name:
+  staging: "postgresql_staging"
+  prod: "postgresql_prod"
+docker_network_name: "gitlab"

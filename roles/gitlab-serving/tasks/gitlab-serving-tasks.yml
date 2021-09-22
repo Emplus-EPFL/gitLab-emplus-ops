@@ -1,5 +1,10 @@
-- include_vars: serving-vars.yml
+- include_vars: "{{ item }}"
   tags: always
+  with_items:
+    - serving-vars.yml
+    # From the top-level vars/ directory:
+    - versions.yml
+    - docker-networking.yml
 
 - name: Common infrastructure
   import_tasks: infrastructure.yml

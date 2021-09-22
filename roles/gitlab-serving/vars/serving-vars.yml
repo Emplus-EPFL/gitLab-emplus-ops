@@ -1,4 +1,3 @@
-docker_network_name: "gitlab"
 gitlab_image_name: "epflemplus/gitlab-docker:{{ gitlab_version }}"
 
 serving_config_dir: "/srv/gitlab/config/{{ inventory_hostname }}"
