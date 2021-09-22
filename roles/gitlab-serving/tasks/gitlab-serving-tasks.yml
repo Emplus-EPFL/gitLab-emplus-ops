@@ -17,3 +17,19 @@
     - images
     - images.build
     - image.build
+
+- name: Serving databases
+  tags:
+    - databases
+    - databases.certs
+    - postgres
+    - postgresql
+    - postgres.reload.staging
+    - postgresql.reload.staging
+    - postgres.monitoring
+    - postgresql.monitoring
+  include_tasks:
+    file: databases.yml
+    apply:
+      tags:
+        - databases

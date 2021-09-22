@@ -1,1 +1,3 @@
 gitlab_version: 14.2.4
+postgresql_docker_image: postgres:13
+redis_docker_image: redis:latest

@@ -1,0 +1,7 @@
+postgresql_config_dir: "{{ serving_config_dir }}/postgresql"
+postgresql_staging_scripts_dir: "{{ postgresql_config_dir }}/scripts"
+redis_config_dir: "{{ serving_config_dir }}/redis"
+
+postgresql_certs_dir: "/srv/gitlab/postgresql/certs/{{ inventory_hostname }}"
+postgresql_prod_cluster_path: /srv/gitlab/postgresql/data
+postgresql_monitoring_exporter_image: quay.io/prometheuscommunity/postgres-exporter

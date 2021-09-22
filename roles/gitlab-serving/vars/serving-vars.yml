@@ -1,2 +1,10 @@
 docker_network_name: "gitlab"
 gitlab_image_name: "epflemplus/gitlab-docker:{{ gitlab_version }}"
+
+serving_config_dir: "/srv/gitlab/config/{{ inventory_hostname }}"
+
+environment_name: >-
+  {{ "prod" if inventory_hostname == "gitlabprod"
+     else "staging" }}
+
+socket_suffix: "-{{ environment_name }}"
