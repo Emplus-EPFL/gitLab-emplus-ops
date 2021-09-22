@@ -11,3 +11,6 @@
 
 - import_tasks: gitlab-vm-docker.yml
   tags: docker
+
+- import_tasks: ntp.yml
+  tags: ntp

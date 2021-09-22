@@ -1,0 +1,10 @@
+- name: Install chrony
+  apt:
+    name: chrony
+    state: present
+
+- name: Start chrony
+  systemd:
+    name: chronyd.service
+    state: started
+    enabled: yes
