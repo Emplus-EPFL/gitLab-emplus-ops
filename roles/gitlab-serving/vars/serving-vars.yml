@@ -35,3 +35,5 @@ _keybase_secrets: >-
   {{ lookup("file", "{{ keybase_topdir }}/secrets.yml") | from_yaml }}
 
 gitlab_secrets: "{{ _keybase_secrets.gitlab }}"
+
+gitlab_restricted_group: emplus-git-users

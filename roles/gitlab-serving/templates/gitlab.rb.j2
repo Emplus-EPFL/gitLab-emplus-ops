@@ -71,6 +71,7 @@ gitlab_rails['omniauth_providers'] = [
       "request_info" => {name: 'displayname', email: 'email', nickname: 'username'},
       "service_name" => "gitlab",
       "additional_parameters" => {
+              require: "group={{ gitlab_restricted_group }}",
               allows: "categorie=epfl-guests"
        },
 {% if (is_kubernetes | default(False)) %}
