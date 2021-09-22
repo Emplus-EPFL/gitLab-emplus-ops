@@ -1,5 +1,5 @@
 - gather_facts: no
-  hosts: all
+  hosts: gitlab-vm
   name: VM and infrastructure configuration
   roles:
     - role: roles/gitlab-vm-infrastructure
