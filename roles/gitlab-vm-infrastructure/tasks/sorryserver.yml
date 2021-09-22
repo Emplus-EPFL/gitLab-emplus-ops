@@ -1,0 +1,24 @@
+# Install the fancy 502 page
+- include_vars: sorryserver-vars.yml
+  tags: always
+
+- name: "{{ sorryserver_serving_path }}"
+  file:
+    path: "{{ sorryserver_serving_path }}"
+    state: directory
+
+- name: "{{ sorryserver_502_file }}"
+  copy:
+    dest: "{{ sorryserver_502_file }}"
+    content: '{{ lookup("template", "sorryserver-502.html") }}'
+
+- name: sorryserver container
+  docker_container:
+    name: sorryserver
+    detach: yes
+    image: "{{ sorryserver_image }}"
+    restart_policy: unless-stopped
+    volumes:
+      - "{{ sorryserver_serving_path }}:/srv/http"
+    network_mode: "{{ docker_network_name }}"
+    container_default_behavior: no_defaults

@@ -1,0 +1,3 @@
+sorryserver_image: pierrezemb/gostatic
+sorryserver_serving_path: /srv/gitlab/sorryserver
+sorryserver_502_file: "{{ sorryserver_serving_path }}/502.html"
