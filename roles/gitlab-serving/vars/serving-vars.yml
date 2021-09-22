@@ -5,5 +5,3 @@ serving_config_dir: "/srv/gitlab/config/{{ inventory_hostname }}"
 environment_name: >-
   {{ "prod" if inventory_hostname == "gitlabprod"
      else "staging" }}
-
-socket_suffix: "-{{ environment_name }}"

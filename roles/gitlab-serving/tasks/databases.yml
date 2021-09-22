@@ -1,16 +1,25 @@
-- include_vars: database-vars.yml
+- include_vars: "{{ item }}"
   tags: always
+  with_items:
+    - database-vars.yml
+    # From the top-level vars/ directory:
+    - paths.yml
+    - database-names.yml
 
 - name: Directories
   file:
     path: "{{ item }}"
     state: directory
-  with_items: >-
-    {{ [redis_config_dir, postgresql_config_dir] +
-       ([ postgresql_staging_scripts_dir] if inventory_hostname == "gitlabstaging"
-       else []) }}
+  with_items:
+    - "{{ redis_config_dir }}"
+    - "{{ postgresql_config_dir }}"
+    - "{{ postgresql_scripts_dir }}"
+    - "{{ postgresql_last_backup_path | dirname }}"
 
 - name: Doctored passwd file for PostgreSQL
+  # Make sure that users “gitlab” and “gitlab-psql” exist; give them
+  # the same UID (999) as the “postgres” user. TODO: perhaps we should
+  # figure the 999 part from the image instead of hard-coding it.
   shell:
     creates: "{{ postgresql_config_dir }}/passwd"
     cmd: |
@@ -18,34 +27,65 @@
         set -e -x
         docker run --rm "{{ postgresql_docker_image }}" cat /etc/passwd
         cat <<MOAR_PASSWD
-      # TODO: we could figure the 999 part from the image again.
       gitlab:x:999:999::/home/postgres:/bin/sh
       gitlab-psql:x:999:999::/home/postgres:/bin/sh
       MOAR_PASSWD
       ) > "{{ postgresql_config_dir }}/passwd"
 
-- name: 'Staging PostgreSQL: script that creates pg-hba.conf'
-  when: inventory_hostname == "gitlabstaging"
-  copy:
-    dest: "{{ postgresql_staging_scripts_dir }}/setup-hba-conf.sh"
-    mode: "0755"
-    content: |
-      #!/bin/bash
-      cat > /var/lib/postgresql/data/pg_hba.conf << HBACONF
-      {{ lookup("template", "pg_hba.conf") }}
-      HBACONF
+- name: "{{ postgresql_last_backup_path }} (must be a file)"
+  run_once: true
+  ansible.builtin.file:
+    path: "{{ postgresql_last_backup_path }}"
+    state: touch
 
-- name: 'Staging PostgreSQL: "log-queries.sh" script'
-  when: inventory_hostname == "gitlabstaging"
+- name: 'PostgreSQL initialization scripts'
   copy:
-    dest: "{{ postgresql_staging_scripts_dir }}/log-queries.sh"
-    mode: "0755"
-    content: |
-      #!/bin/bash
-      # Found on https://github.com/Roconda/docker-postgres-logging/blob/master/Dockerfile
-      set -e
-
-      sed -ri "s/^#log_statement.*/log_statement = 'all'/g" /var/lib/postgresql/data/postgresql.conf
+    dest: "{{ postgresql_scripts_dir }}/{{ item.filename }}"
+    content: "{{ item.content }}"
+    mode: >-
+      {{
+      "0644" if item.filename.endswith(".sql")
+      else "0755"
+      }}
+  with_items: >-
+    {{
+    common_scripts +
+    (staging_only_scripts if environment_name == "staging" else [])
+    }}
+  vars:
+    common_scripts:
+      - filename: setup-authentication.sh
+        # Permit local (UNIX domain socket) authentication without a
+        # password, and SSL with password over TCP for the gitlab
+        # user. Forbid everything else.
+        content: |
+          #!/bin/bash
+          cat > /var/lib/postgresql/data/pg_hba.conf << HBACONF
+          local   all all         trust
+          hostssl all gitlab all     md5
+          HBACONF
+      - filename: setup-extra-socket-dir.sh
+        # Listen to *another* UNIX domain socket. This will only
+        # happen after PostgreSQL is done initializing and restarts,
+        # thereby guaranteeing that clients cannot witness an
+        # incompletely-initialized DB.
+        content: |
+          #!/bin/bash
+          mkdir -p /run/gitlab-postgresql
+          sed -ri "s|^#unix_socket_directories.*|unix_socket_directories = '/var/run/postgresql,/run/gitlab-postgresql'|g" {{ pg_conf_path }}
+      - filename: gitlab-role.sql
+        content: |
+          CREATE USER gitlab;
+          CREATE DATABASE {{ postgresql_database_name }};
+          GRANT ALL PRIVILEGES ON DATABASE {{ postgresql_database_name }} TO gitlab;
+    staging_only_scripts:
+      - filename: log-queries.sh
+        # Turn on query logging
+        # Found on https://github.com/Roconda/docker-postgres-logging/blob/master/Dockerfile
+        content: |
+          #!/bin/bash
+          sed -ri "s/^#log_statement.*/log_statement = 'all'/g" {{ pg_conf_path }}
+    pg_conf_path: "/var/lib/postgresql/data/postgresql.conf"
   tags:
     - postgres
     - postgresql
@@ -91,10 +131,11 @@
          (  ( (_serving_image is defined)
               and (_serving_image is changed) )
             or
-            ( ansible_run_tags |
-              intersect(["postgres.reload.staging",
-                         "postgresql.reload.staging"]) |
-              length > 0 )  ) }}
+            ( "postgres.reload.staging" in ansible_run_tags )
+            or
+            ( "postgresql.reload.staging" in ansible_run_tags )
+         )
+      }}
 
 - name: 'PostgreSQL database'
   docker_container:
@@ -109,10 +150,6 @@
       max-file: "3"
     container_default_behavior: no_defaults
     volumes: "{{ volumes[environment_name] }}"
-    env:
-      POSTGRES_PASSWORD: "roo3bezahBo6bohH3aY9"  # TODO: generate a stable password here.
-                                                 # (It just needs to be set; the value isn't
-                                                 # shared anywhere else.)
     network_mode: "{{ docker_network_name }}"
     command:
       - postgres
@@ -122,36 +159,32 @@
       - ssl_cert_file=/etc/ssl/certs/cert.pem
       - "-c"
       - ssl_key_file=/etc/ssl/certs/key.pem
-
+    env:
+      # pg_hba.conf guarantees that knowing this password cannot possibly make a
+      # difference (see above):
+      POSTGRES_PASSWORD: unused_but_the_container_insists_on_having_one_so_there
   vars:
     volumes:
-      staging: '{{ staging_startup_scripts + [socket_volume, doctored_passwd_volume, certs_volume] }}'
-      prod: '{{ [socket_volume, doctored_passwd_volume, storage_volume, certs_volume] }}'
-    socket_volume: "/srv/gitlab/run/postgres-socket{{ socket_suffix }}:/run/postgresql/"
-    doctored_passwd_volume: "{{ postgresql_config_dir }}/passwd:/etc/passwd:ro"
-    storage_volume: "{{ postgresql_prod_cluster_path }}:/var/lib/postgresql/data"
-    certs_volume: "{{ postgresql_certs_dir }}:/etc/ssl/certs"
-    staging_startup_scripts:
-      # The staging database is *not* persistent; instead, it
-      # reloads from a production backup every time it starts up.
-      #
-      # As per https://hub.docker.com/_/postgres/, SQL / shell
-      # scripts in /docker-entrypoint-initdb.d get executed at
-      # startup:
-      - "{{ postgresql_staging_scripts_dir }}:/docker-entrypoint-initdb.d:rw"
-      - "/srv/gitlab/backup/postgresql_dump.sql:/docker-entrypoint-initdb.d/00-restore.sql:ro"
+      staging: '{{ common_volumes + [staging_db_restore_volume] }}'
+      prod: '{{ common_volumes + [ prod_storage_volume ] }}'
+    common_volumes:
+      # UNIX-domain socket to share with other containers (i.e.
+      # gitlab). See above for why we aren't just using
+      # /run/postgresql (TL;DR: initialization ordering guarantee)
+      - "/srv/gitlab/run/postgres-socket-{{ environment_name }}:/run/gitlab-postgresql/"
+      # Doctored passwd file, see above
+      - "{{ postgresql_config_dir }}/passwd:/etc/passwd:ro"
+      - "{{ postgresql_certs_dir }}:/etc/ssl/certs"
+      - "{{ postgresql_scripts_dir }}:/docker-entrypoint-initdb.d:rw"
+    prod_storage_volume: "{{ postgresql_prod_cluster_path }}:/var/lib/postgresql/data"
+    # The staging database is *not* persistent; instead, we want it to reload
+    # from a production backup every time it starts up.
+    staging_db_restore_volume: "/srv/gitlab/backup/postgresql_dump.sql:/docker-entrypoint-initdb.d/00-restore.sql:ro"
   tags:
     - postgres
     - postgresql
     - postgres.reload.staging
     - postgresql.reload.staging
-
-- name: "{{ postgresql_prod_cluster_path }}/pg_hba.conf"
-  when: inventory_hostname == "gitlabprod"
-  copy:
-    dest: "{{ postgresql_prod_cluster_path }}/pg_hba.conf"
-    content: >-
-      {{ lookup("template", "pg_hba.conf") }}
 
 - name: "Wait until staging PostgreSQL has reloaded from backup"
   when: _postgresql_should_purge_staging
@@ -177,9 +210,9 @@
     content: >-
       {{ lookup("template", "redis.conf.j2") }}
 
-- name: "Redis socket directory (/srv/gitlab/run/redis-socket{{ socket_suffix }})"
+- name: "Redis socket directory (/srv/gitlab/run/redis-socket-{{ environment_name }})"
   file:
-    path: "/srv/gitlab/run/redis-socket{{ socket_suffix }}"
+    path: "/srv/gitlab/run/redis-socket-{{ environment_name }}"
     state: directory
     mode: "01777"
 
@@ -198,7 +231,7 @@
       DATA_SOURCE_NAME: "user=postgres host=/run/postgresql/ sslmode=disable"
     container_default_behavior: no_defaults
     volumes:
-      - "/srv/gitlab/run/postgres-socket{{ socket_suffix }}:/run/postgresql/"
+      - "/srv/gitlab/run/postgres-socket-{{ environment_name }}:/run/postgresql/"
   tags:
     - postgres.monitoring
     - postgresql.monitoring
@@ -215,7 +248,7 @@
     container_default_behavior: no_defaults
     volumes:
       - "{{ redis_config_dir }}/redis.conf:/usr/local/etc/redis/redis.conf:ro"
-      - "/srv/gitlab/run/redis-socket{{ socket_suffix }}:/run/redis"
+      - "/srv/gitlab/run/redis-socket-{{ environment_name }}:/run/redis"
     command:
       - redis-server
       - /usr/local/etc/redis/redis.conf

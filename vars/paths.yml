@@ -1,0 +1,1 @@
+postgresql_last_backup_path: /srv/gitlab/backup/postgresql_dump.sql

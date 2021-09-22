@@ -1,0 +1,1 @@
+postgresql_database_name: "gitlabhq_{{ environment_name }}"
