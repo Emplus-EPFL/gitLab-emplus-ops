@@ -1,0 +1,14 @@
+- name: "{{ docker_network_name }} Docker network"
+  when: >-
+    inventory_hostname == "gitlabprod"
+  docker_network:
+    name: "{{ docker_network_name }}"
+
+- name: "“Sorry server”"
+  when: >-
+    inventory_hostname == "gitlabprod"
+  include_tasks:
+    file: sorryserver.yml
+    apply:
+      tags: sorryserver
+  tags: sorryserver

@@ -4,10 +4,10 @@
   roles:
     - role: roles/gitlab-vm-infrastructure
 
-### TODO: later we can have more roles, e.g.
-# - gather_facts: no
-#   hosts: all
-#   name: gitlab deployment
-#   roles:
-#     - role: roles/gitlab
-
+- gather_facts: no
+  hosts:
+    - gitlabstaging
+    - gitlabprod
+  name: User-facing features
+  roles:
+    - role: roles/gitlab-serving

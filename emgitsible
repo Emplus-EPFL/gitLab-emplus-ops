@@ -55,7 +55,7 @@ platform_check () {
 mode=ansible-playbook
 
 declare -a ansible_args
-ansible_args=(-e "emgitsible_dir=$OLDPWD" -e @vars.yml)
+ansible_args=(-e "emgitsible_dir=$OLDPWD")
 
 while [ "$#" -gt 0 ]; do
   case "$1" in

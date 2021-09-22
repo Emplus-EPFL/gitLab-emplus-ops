@@ -37,7 +37,3 @@
       - docker
       - requests
     state: latest
-
-- name: "{{ docker_network_name }} Docker network"
-  docker_network:
-    name: "{{ docker_network_name }}"

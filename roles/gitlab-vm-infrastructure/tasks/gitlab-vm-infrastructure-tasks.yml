@@ -14,7 +14,3 @@
 
 - import_tasks: ntp.yml
   tags: ntp
-
-- name: "“Sorry server”"
-  import_tasks: sorryserver.yml
-  tags: sorryserver
