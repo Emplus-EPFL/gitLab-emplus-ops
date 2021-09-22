@@ -37,3 +37,9 @@ _keybase_secrets: >-
 gitlab_secrets: "{{ _keybase_secrets.gitlab }}"
 
 gitlab_restricted_group: emplus-git-users
+
+gitlab_s3_credentials:
+  endpoint: s3.epfl.ch
+  bucket: "{{ _keybase_secrets.s3.bucket }}"
+  accessKeyID: "{{ _keybase_secrets.s3.ReadWriteAccessKeyID }}"
+  secret: "{{ _keybase_secrets.s3.ReadWriteSecretKey }}"

@@ -83,6 +83,16 @@ gitlab_rails['omniauth_providers'] = [
   }
 ]
 
+gitlab_rails['object_store']['enabled'] = true
+gitlab_rails['object_store']['proxy_download'] = true
+gitlab_rails['object_store']['connection'] = {
+   'provider' => 'AWS',
+   'endpoint' => '{{ gitlab_s3_credentials.endpoint  }}',
+   'aws_access_key_id' => '{{ gitlab_s3_credentials.accessKeyID }}',
+   'aws_secret_access_key' => '{{ gitlab_s3_credentials.secret  }}'
+}
+gitlab_rails['object_store']['objects']['lfs']['bucket'] = '{{ gitlab_s3_credentials.bucket }}'
+
 gitlab_exporter['enable'] = true
 gitlab_rails['monitoring_whitelist'] = ['127.0.0.0/8', '10.0.0.0/8']
 
