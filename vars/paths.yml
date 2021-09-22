@@ -1,1 +1,2 @@
 postgresql_last_backup_path: /srv/gitlab/backup/postgresql_dump.sql
+traefik_dynamic_config_dir: /srv/gitlab/config/traefik/dynamic

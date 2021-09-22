@@ -3,6 +3,7 @@
   with_items:
     - serving-vars.yml
     # From the top-level vars/ directory:
+    - hostnames.yml
     - database-names.yml
 
 - name: "Configuration directories"

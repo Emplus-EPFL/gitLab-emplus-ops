@@ -1,0 +1,90 @@
+- include_vars: "{{ item }}"
+  with_items:
+    - ../../../vars/paths.yml
+    # From the top-level vars/ directory:
+    - paths.yml
+    - hostnames.yml
+  tags: always
+
+- name: "Configuration directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ traefik_static_config_file | dirname }}"
+    - "{{ traefik_dynamic_config_dir }}"
+
+- name: "{{ traefik_static_config_file }}"
+  copy:
+    content: "{{ lookup('template', 'traefik.yml.j2') }}"
+    dest: "{{ traefik_static_config_file }}"
+  register: _traefik_static_config_file
+
+- name: "{{ traefik_staging_dynamic_config_file }}"
+  copy:
+    dest: "{{ traefik_staging_dynamic_config_file }}"
+    content: "{{ lookup('template', 'traefik-gitlabstaging.yml.j2') }}"
+
+- name: "{{ traefik_debug_dynamic_config_file }}"
+  when: traefik_debug is defined
+  copy:
+    dest: "{{ traefik_debug_dynamic_config_file }}"
+    content: |
+      http:
+        routers:
+          dashy:
+            rule: "PathPrefix(`/api`) || PathPrefix(`/dashboard/`)"
+            service: "api@internal"
+            tls: {}
+            priority: 2
+          prom:
+            rule: "PathPrefix(`/metrics`)"
+            service: "prometheus@internal"
+            tls: {}
+            priority: 2
+
+- name: delete "{{ traefik_debug_dynamic_config_file }}"
+  when: traefik_debug is not defined
+  file:
+    path: "{{ traefik_debug_dynamic_config_file }}"
+    state: absent
+
+- name: "{{ traefik_bluegreen_dynamic_config_file }}"
+  copy:
+    # Don't touch an existing file unless --prod was passed to gitsible:
+    force: >-
+      {{ "gitlabprod" in hostvars }}
+    dest: "{{ traefik_bluegreen_dynamic_config_file }}"
+    content: "{{ lookup('template', 'traefik-bluegreen.yml.j2') }}"
+  tags:
+    - traefik.bluegreen
+    - træfik.bluegreen
+
+- name: "{{ traefik_extra_services_dynamic_config_file }}"
+  copy:
+    dest: "{{ traefik_extra_services_dynamic_config_file }}"
+    content: "{{ lookup('template', 'traefik-extra-services.yml.j2') }}"
+  tags:
+    - traefik.extra
+    - træfik.extra
+
+- name: Traefik Docker container
+  docker_container:
+    name: traefik
+    restart: "{{ _traefik_static_config_file is changed }}"
+    detach: yes
+    image: traefik:v2.3
+    restart_policy: unless-stopped
+    published_ports:
+      - "2222:2222"
+      - "2223:2223"
+      - "443:443"
+      - "444:444"
+    container_default_behavior: no_defaults
+    volumes:
+      - "{{ traefik_acme_state_dir }}:/acme"
+      - "{{ traefik_static_config_file }}:/etc/traefik/traefik.yml"
+      - "{{ traefik_dynamic_config_dir }}:/etc/traefik/dynamic"
+    networks_cli_compatible: no
+    networks:
+      - name: "{{ docker_network_name }}"

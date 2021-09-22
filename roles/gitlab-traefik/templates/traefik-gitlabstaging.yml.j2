@@ -1,0 +1,37 @@
+# -*- mode: yaml; -*-
+
+############## Sending traffic to the staging instance of gitlab (port 444)
+#
+# This is a so-called “dynamic” configuration, i.e. if we change it,
+# Træfik will re-read it.
+
+http:
+  routers:
+    gitlab-staging:
+      rule: "Host(`{{ gitlab_frontend_hostname }}`)"
+      entrypoints: websecure_staging
+      tls:
+        certresolver: letsencrypt
+      service: gitlab-staging
+      middlewares:
+        - sorryserver
+
+  services:
+    gitlab-staging:
+      loadBalancer:
+        servers:
+          - url: "http://{{ gitlab_docker_staging_hostname }}/"
+
+tcp:
+  routers:
+    gitlab-ssh-staging:
+      rule: "{{ traefik_tcp_rule_catch_all }}"
+      entryPoints:
+        - "ssh_staging"
+      service: gitlab-ssh-staging
+
+  services:
+    gitlab-ssh-staging:
+      loadBalancer:
+        servers:
+        - address: "{{ gitlab_docker_staging_hostname }}:22"

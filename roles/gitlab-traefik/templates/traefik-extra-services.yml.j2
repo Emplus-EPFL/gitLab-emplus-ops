@@ -1,0 +1,47 @@
+# -*- mode: yaml; -*-
+
+############## Sending traffic to PlantUML and the sorry server
+#
+# This is a so-called “dynamic” configuration, i.e. if we change it,
+# Træfik will re-read it.
+
+http:
+  routers:
+    plantuml:
+      rule: "Host(`{{ gitlab_frontend_hostname }}`) && PathPrefix(`/plantuml`)"
+      entrypoints:
+        - websecure
+        - websecure_staging
+      tls:
+        certresolver: letsencrypt
+      service: plantuml
+      middlewares:
+        - plantuml-rewrite-host-header
+        - plantuml-rewrite-path
+        - sorryserver
+
+  services:
+    plantuml:
+      loadBalancer:
+        servers:
+          - url: "http://plantuml:8080/"
+    sorryserver:
+      loadBalancer:
+        servers:
+          - url: "http://sorryserver:8043/"
+
+  middlewares:
+    plantuml-rewrite-host-header:
+      headers:
+        customRequestHeaders:
+          Host: "plantuml"
+    plantuml-rewrite-path:
+      replacePathRegex:
+        regex: "^/plantuml/(.*)"
+        replacement: "/$1"
+    sorryserver:
+      errors:
+        status:
+          - "502"
+        service: sorryserver
+        query: "/502.html"

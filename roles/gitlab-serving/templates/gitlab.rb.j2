@@ -18,7 +18,7 @@
 {% if (is_kubernetes | default(False)) %}
 external_url 'https://{{ k8s_serving_hostname }}/'
 {% else %}
-external_url (ENV["ENVIRONMENT"] == "staging" ? 'https://gitlab.epfl.ch:444/' : 'https://gitlab.epfl.ch/')
+external_url (ENV["ENVIRONMENT"] == "staging" ? 'https://{{ gitlab_frontend_hostname }}:444/' : 'https://{{ gitlab_frontend_hostname }}/')
 {% endif %}
 nginx['listen_port'] = 80
 nginx['listen_https'] = false

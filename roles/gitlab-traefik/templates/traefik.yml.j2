@@ -1,0 +1,63 @@
+# -*- mode: yaml; -*-
+
+{% if traefik_debug is defined %}
+log:
+  level: DEBUG
+
+api:
+  insecure: true
+  dashboard: true
+{% endif %}
+
+metrics:
+  prometheus:
+    manualRouting: true
+
+providers:
+  # Point to the so-called “dynamic” configuration, managed by
+  # Ansible
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+# https://docs.traefik.io/https/acme/
+certificatesResolvers:
+  letsencrypt:
+    acme:
+{% if traefik_letsencrypt_staging is defined %}
+      caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+{% endif %}
+      storage: /acme/acme.json
+      email: idev-fsd@groupes.epfl.ch
+      tlsChallenge: true
+
+entryPoints:
+  ssh:
+    address: ":2222"
+  ssh_staging:
+    address: ":2223"
+
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt    # Defined above
+        domains:
+          - '{{ gitlab_frontend_hostname }}'
+  websecure_staging:
+    address: ":444"
+    http:
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - '{{ gitlab_frontend_hostname }}'
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  traefik:
+    address: ":8080"

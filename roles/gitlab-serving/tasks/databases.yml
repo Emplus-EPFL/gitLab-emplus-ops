@@ -3,6 +3,7 @@
   with_items:
     - database-vars.yml
     # From the top-level vars/ directory:
+    - hostnames.yml
     - paths.yml
     - database-names.yml
 
@@ -108,7 +109,7 @@
   openssl_csr:
     path: "{{ postgresql_certs_dir }}/cert.csr"
     privatekey_path: "{{ postgresql_certs_dir }}/key.pem"
-    common_name: "gitlab.epfl.ch"
+    common_name: "{{ gitlab_frontend_hostname }}"
   tags: databases.certs
 
 - name: "RSA certificate for PostgreSQL"

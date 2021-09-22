@@ -1,0 +1,37 @@
+# -*- mode: yaml; -*-
+
+############## Configuration for sending traffic to gitlab
+#
+# This is a so-called “dynamic” configuration, i.e. if we change it,
+# Træfik will re-read it.
+
+http:
+  routers:
+    gitlab:
+      rule: "Host(`{{ gitlab_frontend_hostname }}`)"
+      entrypoints: websecure
+      tls:
+        certresolver: letsencrypt
+      service: gitlab
+      middlewares:
+        - sorryserver
+
+  services:
+    gitlab:
+      loadBalancer:
+        servers:
+          - url: "http://{{ gitlab_docker_prod_hostname }}/"
+
+tcp:
+  routers:
+    gitlab-ssh:
+      rule: "{{ traefik_tcp_rule_catch_all }}"
+      entryPoints:
+        - "ssh"
+      service: gitlab-ssh
+
+  services:
+    gitlab-ssh:
+      loadBalancer:
+        servers:
+        - address: "{{ gitlab_docker_prod_hostname }}:22"

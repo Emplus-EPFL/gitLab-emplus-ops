@@ -1,0 +1,5 @@
+- include_vars: traefik_vars.yml
+  tags: always
+
+- import_tasks: traefik.yml
+  tags: traefik

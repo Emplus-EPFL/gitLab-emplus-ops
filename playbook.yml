@@ -8,6 +8,13 @@
   hosts:
     - gitlabstaging
     - gitlabprod
-  name: User-facing features
+  name: Serving containers
   roles:
     - role: roles/gitlab-serving
+
+- gather_facts: no
+  hosts:
+    - gitlabprod
+  name: Træfik
+  roles:
+    - role: roles/gitlab-traefik
