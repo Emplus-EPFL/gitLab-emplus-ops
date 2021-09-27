@@ -4,6 +4,8 @@
     # From the top-level vars/ directory:
     - paths.yml
     - hostnames.yml
+    - docker-networking.yml
+    - versions.yml
   tags: always
 
 - name: "Configuration directories"

@@ -29,8 +29,7 @@
     - role: roles/gitlab-serving
 
 - gather_facts: no
-  hosts:
-    - gitlabprod
+  hosts: gitlab-vm
   name: Træfik
   roles:
     - role: roles/gitlab-traefik
