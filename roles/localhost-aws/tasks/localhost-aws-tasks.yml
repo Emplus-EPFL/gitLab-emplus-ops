@@ -1,0 +1,76 @@
+# Make `aws --profile=emplus-gitlab` work on the operator's workstation.
+
+- name: Check that aws-cli is installed
+  connection: local
+  changed_when: false
+  ansible.builtin.shell:
+    cmd: >-
+      {{ aws_cmd }} --version
+
+- name: Check whether https://github.com/wbingli/awscli-plugin-endpoint is installed
+  connection: local
+  changed_when: false
+  failed_when: false
+  register: _aws_check_plugin_endpoint
+  ansible.builtin.shell:
+    cmd: >-
+      {{ aws_cmd }} configure get plugins.endpoint
+      | grep -q awscli_plugin_endpoint >/dev/null
+
+- name: "AWS configuration directory"
+  register: _aws_create_configuration_files
+  changed_when: >-
+    ( _aws_create_configuration_files | default(False) )
+    and
+    ( "::CHANGED::" in _aws_create_configuration_files.stdout )
+  ansible.builtin.shell:
+    cmd: |
+      set -e -x
+      for file in "{{ aws_config_file }}" "{{ aws_credentials_file }}"; do
+        dir="$(dirname "$file")"
+        if ! test -d "$dir"; then
+          mkdir -p "$dir"
+          echo ::CHANGED::
+        fi
+        if ! test -f "$file"; then
+          : >> "$file"
+          echo ::CHANGED::
+        fi
+      done
+
+- name: "Configuration for --profile={{ aws_profile_name }} in {{ aws_config_file }}"
+  connection: local
+  ansible.builtin.blockinfile:
+    path: "{{ aws_config_file }}"
+    block: |
+      [profile {{ aws_profile_name }}]
+      output = json
+      s3 =
+          endpoint_url = https://s3.epfl.ch
+
+- name: "Credentials for --profile={{ aws_profile_name }} in {{ aws_credentials_file }}"
+  connection: local
+  ansible.builtin.blockinfile:
+    path: "{{ aws_credentials_file }}"
+    block: |
+      [{{ aws_profile_name }}]
+      aws_access_key_id = {{      aws_secrets.key_id }}
+      aws_secret_access_key =  {{ aws_secrets.secret_key }}
+
+- name: Usage instructions
+  ansible.builtin.debug:
+    msg:
+      - AWS profile {{ aws_profile_name }} has been configured. Try it with
+      - >-
+        aws --profile={{ aws_profile_name }}{{ _maybe_endpoint }} s3 ls {{ aws_bucket }}
+  vars:
+    _maybe_endpoint: >-
+      {{
+      "" if 
+      (
+      ( _aws_check_plugin_endpoint | default(False) )
+      and
+      ( _aws_check_plugin_endpoint.rc == 0 )
+      )
+      else " --endpoint-url=https://s3.epfl.ch"
+      }}

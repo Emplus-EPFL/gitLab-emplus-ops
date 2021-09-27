@@ -1,0 +1,17 @@
+aws_cmd: >-
+  env - PATH=$PATH aws
+aws_config_file: >-
+  {{ "~/.aws/config" | expanduser }}
+aws_credentials_file: >-
+  {{ "~/.aws/credentials" | expanduser }}
+
+aws_profile_name: emplus_gitlab
+
+_aws_keybase_file: /keybase/team/emplus_epfl.gitlab/secrets.yml
+_aws_keybase_contents: >-
+  {{ lookup("file", "{{ _aws_keybase_file }}") | from_yaml }}
+aws_secrets:
+  key_id: '{{     _aws_keybase_contents.s3.ReadWriteAccessKeyID }}'
+  secret_key: '{{ _aws_keybase_contents.s3.ReadWriteSecretKey }}'
+aws_bucket: >-
+  {{ _aws_keybase_contents.s3.bucket }}

@@ -5,6 +5,9 @@
 - Be a member of the `emplus_epfl.gitlab` Keybase team
 - Be a member of the [`emplus-git-users` group](https://groups.epfl.ch/viewgroup?groupid=S28705)
 - Have ssh access to `cdhvm0024.xaas.epfl.ch`
+- Have the AWS CLI installed
+   - On Mac OS X: `brew install awscli`
+   - On Ubuntu or WSL: `apt-get install awscli`
 
 ### Initialization part 1
 

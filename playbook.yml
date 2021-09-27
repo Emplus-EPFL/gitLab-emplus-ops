@@ -39,3 +39,9 @@
   name: Træfik
   roles:
     - role: roles/gitlab-traefik
+
+- gather_facts: no
+  hosts: localhost
+  name: Operator workstation configuration for aws-cli
+  roles:
+    - role: roles/localhost-aws

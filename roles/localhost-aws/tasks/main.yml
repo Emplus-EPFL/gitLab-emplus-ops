@@ -1,0 +1,5 @@
+- include_vars: aws-vars.yml
+  tags: always
+
+- import_tasks: localhost-aws-tasks.yml
+  tags: aws
