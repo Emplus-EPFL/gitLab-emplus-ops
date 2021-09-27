@@ -57,11 +57,15 @@ mode=ansible-playbook
 
 declare -a ansible_args
 ansible_args=(-e "emgitsible_dir=$OLDPWD")
+inventories="-i inventory/test.yml"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
         -m) mode=ansible
             ansible_args+=("-m")
+            shift ;;
+        --prod)
+            inventories="$inventories -i inventory/prod.yml"
             shift ;;
         *)
             ansible_args+=("$1")
@@ -79,11 +83,11 @@ set -e
 platform_check
 case "$mode" in
     ansible-playbook)
-        ansible-playbook $playbook_flags -i inventory.yml "${ansible_args[@]}" \
+        ansible-playbook $playbook_flags $inventories "${ansible_args[@]}" \
                          $ansible_flags \
                          playbook.yml
         ;;
     ansible)
-        ansible -i inventory.yml $ansible_flags "${ansible_args[@]}"
+        ansible $inventories $ansible_flags "${ansible_args[@]}"
         ;;
 esac

@@ -1,0 +1,11 @@
+all:
+  hosts:
+    # Here we list the targets that Ansible will ssh into to do things.
+    gitlab-vm:
+
+    # We abuse the notion of a host a little bit, so as to be able to
+    # do the same things on two places (on the same VM):
+  children:
+    all_gitlabs:
+      hosts:
+        gitlabprod:

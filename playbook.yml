@@ -23,9 +23,7 @@
     unattended_dpkg_options: ["--force-confdef"]
 
 - gather_facts: no
-  hosts:
-    - gitlabstaging
-    - gitlabprod
+  hosts: all_gitlabs
   name: Serving containers
   roles:
     - role: roles/gitlab-serving
