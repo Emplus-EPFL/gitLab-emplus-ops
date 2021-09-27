@@ -46,7 +46,7 @@ As per the [official instructions](https://docs.gitlab.com/ee/user/admin_area/se
 
 1. Browse ≡ Menu → 🔧 Admin → Settings → General
 1. Expand “Sign-up restrictions” and uncheck “Sign-up enabled”. Save changes with the blue button (scroll down)
-1. Expand “Sign-in restrictions” and uncheck “1. Expand “Sign-up restrictions” and uncheck “Sign-up enabled”. Save changes with the blue button (scroll down again)
+1. Expand “Sign-in restrictions” and uncheck “Allow password authentication for the web interface”. Save changes with the blue button (scroll down again)
 1. Log out and control that the homepage no longer shows the possibility to register by email and password. <br> 💡 People with a Tequila account and appropriate vetting can still log in, no matter whether they are within or outside of the EPFL organization (see below)
 
 # Day-to-day operations
