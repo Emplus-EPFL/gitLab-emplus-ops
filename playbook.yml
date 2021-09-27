@@ -23,6 +23,12 @@
     unattended_dpkg_options: ["--force-confdef"]
 
 - gather_facts: no
+  hosts: gitlab-vm
+  name: Backups
+  roles:
+    - role: roles/gitlab-backups
+
+- gather_facts: no
   hosts: all_gitlabs
   name: Serving containers
   roles:

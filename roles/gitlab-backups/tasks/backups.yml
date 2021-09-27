@@ -1,0 +1,68 @@
+- include_vars: paths.yml   # From ../../../vars/
+  tags: always
+
+- tags:
+    - backups
+    - crontab
+  name: "{{ backup_crontab }}"
+  ansible.builtin.copy:
+    dest: "{{ backup_crontab }}"
+    mode: "0755"
+    content: |
+        #!/bin/sh
+
+        set -e
+
+        DUMPFILE={{ postgresql_last_backup_path }}
+
+        (
+          docker exec postgresql_prod pg_dumpall --roles-only -c -U postgres | \
+              grep -Pv '^(DROP|CREATE|ALTER) ROLE postgres'                  | \
+              sed 's/DROP \([^ ]*\)/DROP \1 IF EXISTS/'
+          echo "DROP DATABASE IF EXISTS gitlabhq_prod;"
+          docker exec postgresql_prod pg_dump -C -U postgres gitlabhq_prod
+        ) | sed 's|gitlabhq_prod|gitlabhq_staging|' > $DUMPFILE.NEW
+        mv $DUMPFILE.NEW $DUMPFILE
+
+- tags:
+    - backups
+    - logrotate
+  name: "{{ backup_logrotate_conf }}"
+  ansible.builtin.copy:
+    dest: "{{ backup_logrotate_conf }}"
+    content: |
+      # GitLab logrotate settings
+      # based on: http://stackoverflow.com/a/4883967
+
+      {{ postgresql_last_backup_path }} {
+          daily
+          missingok
+          rotate 90
+          compress
+          copy
+          notifempty
+      }
+
+- tags:
+    - backups
+    - serving   # Required by ../../../roles/gitlab-serving/tasks/databases.yml
+  name: "Is {{ postgresql_last_backup_path }} a file?"
+  run_once: true
+  ansible.builtin.stat:
+    path: "{{ postgresql_last_backup_path }}"
+  register: _pg_prod_last_backup_file
+
+- name: "Create {{ postgresql_last_backup_path }}"
+  run_once: true
+  tags: always
+  when: >-
+    (_pg_prod_last_backup_file | default(False))
+    and not
+    (
+    ("stat" in _pg_prod_last_backup_file)
+    and _pg_prod_last_backup_file.stat.exists
+    and _pg_prod_last_backup_file.stat.isreg
+    )
+  ansible.builtin.file:
+    path: "{{ postgresql_last_backup_path }}"
+    state: touch

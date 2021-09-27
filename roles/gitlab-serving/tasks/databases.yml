@@ -33,26 +33,6 @@
       MOAR_PASSWD
       ) > "{{ postgresql_config_dir }}/passwd"
 
-- name: "Is {{ postgresql_last_backup_path }} a file?"
-  run_once: true
-  ansible.builtin.stat:
-    path: "{{ postgresql_last_backup_path }}"
-  register: _pg_prod_last_backup_file
-
-- name: "Create {{ postgresql_last_backup_path }}"
-  run_once: true
-  when: >-
-    (_pg_prod_last_backup_file | default(False))
-    and not
-    (
-    ("stat" in _pg_prod_last_backup_file)
-    and _pg_prod_last_backup_file.stat.exists
-    and _pg_prod_last_backup_file.stat.isreg
-    )
-  ansible.builtin.file:
-    path: "{{ postgresql_last_backup_path }}"
-    state: touch
-
 - name: 'PostgreSQL initialization scripts'
   copy:
     dest: "{{ postgresql_scripts_dir }}/{{ item.filename }}"
