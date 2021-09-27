@@ -16,10 +16,11 @@
         DUMPFILE={{ postgresql_last_backup_path }}
 
         (
+          echo "DROP DATABASE IF EXISTS gitlabhq_staging;"
+          echo "DROP OWNED BY gitlab;"
           docker exec postgresql_prod pg_dumpall --roles-only -c -U postgres | \
               grep -Pv '^(DROP|CREATE|ALTER) ROLE postgres'                  | \
               sed 's/DROP \([^ ]*\)/DROP \1 IF EXISTS/'
-          echo "DROP DATABASE IF EXISTS gitlabhq_prod;"
           docker exec postgresql_prod pg_dump -C -U postgres gitlabhq_prod
         ) | sed 's|gitlabhq_prod|gitlabhq_staging|' > $DUMPFILE.NEW
         mv $DUMPFILE.NEW $DUMPFILE

@@ -49,7 +49,7 @@
     }}
   vars:
     common_scripts:
-      - filename: setup-authentication.sh
+      - filename: 10-setup-authentication.sh
         # Permit local (UNIX domain socket) authentication without a
         # password, and SSL with password over TCP for the gitlab
         # user. Forbid everything else.
@@ -59,7 +59,7 @@
           local   all all         trust
           hostssl all gitlab all     md5
           HBACONF
-      - filename: setup-extra-socket-dir.sh
+      - filename: 10-setup-extra-socket-dir.sh
         # Listen to *another* UNIX domain socket. This will only
         # happen after PostgreSQL is done initializing and restarts,
         # thereby guaranteeing that clients cannot witness an
@@ -68,13 +68,13 @@
           #!/bin/bash
           mkdir -p /run/gitlab-postgresql
           sed -ri "s|^#unix_socket_directories.*|unix_socket_directories = '/var/run/postgresql,/run/gitlab-postgresql'|g" {{ pg_conf_path }}
-      - filename: gitlab-role.sql
+      - filename: 20-database-and-role.sql
         content: |
           CREATE USER gitlab;
           CREATE DATABASE {{ postgresql_database_name }};
           GRANT ALL PRIVILEGES ON DATABASE {{ postgresql_database_name }} TO gitlab;
     staging_only_scripts:
-      - filename: log-queries.sh
+      - filename: 30-log-queries.sh
         # Turn on query logging
         # Found on https://github.com/Roconda/docker-postgres-logging/blob/master/Dockerfile
         content: |
@@ -174,7 +174,7 @@
     prod_storage_volume: "{{ postgresql_prod_cluster_path }}:/var/lib/postgresql/data"
     # The staging database is *not* persistent; instead, we want it to reload
     # from a production backup every time it starts up.
-    staging_db_restore_volume: "/srv/gitlab/backup/postgresql_dump.sql:/docker-entrypoint-initdb.d/00-restore.sql:ro"
+    staging_db_restore_volume: "/srv/gitlab/backup/postgresql_dump.sql:/docker-entrypoint-initdb.d/99-restore.sql:ro"
   tags:
     - postgres
     - postgresql
