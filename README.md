@@ -19,8 +19,7 @@ Some tweaks have not (yet) been reduced to configuration-as-code.
 
 #### Test access (and ensure you have an account at the same time)
 
-1. Browse https://cdhvm0024.xaas.epfl.ch/
-1. Bypass your browser's warning (if any) regarding the invalid certificate
+1. Browse https://emplus-gitlab.epfl.ch/
 1. Log in with the Tequila button
 
 #### Set administrator privileges for yourself
