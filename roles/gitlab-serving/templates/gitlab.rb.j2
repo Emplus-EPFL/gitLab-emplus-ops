@@ -89,7 +89,8 @@ gitlab_rails['lfs_object_store_enabled'] = true
 gitlab_rails['lfs_object_store_proxy_download'] = true
 gitlab_rails['lfs_object_store_connection'] = {
    'provider' => 'AWS',
-   'endpoint' => '{{ gitlab_s3_credentials.endpoint  }}',
+   'host' => 'localhost',
+   'endpoint' => '{{ gitlab_s3_credentials.endpoint }}',
    'aws_access_key_id' => '{{ gitlab_s3_credentials.accessKeyID }}',
    'aws_secret_access_key' => '{{ gitlab_s3_credentials.secret  }}'
 }
