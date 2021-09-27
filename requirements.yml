@@ -1,3 +1,5 @@
 # Ansible requirements
 collections:
   - community.general
+roles:
+  - jnv.unattended-upgrades

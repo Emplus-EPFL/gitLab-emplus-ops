@@ -5,6 +5,24 @@
     - role: roles/gitlab-vm-infrastructure
 
 - gather_facts: no
+  hosts: gitlab-vm
+  name: Unattended distribution upgrades
+  # https://github.com/jnv/ansible-role-unattended-upgrades#for-ubuntu
+  roles:
+    - role: jnv.unattended-upgrades
+  vars:
+    unattended_remove_unused_dependencies: true
+    unattended_automatic_reboot: true
+    unattended_automatic_reboot_time: 03:00
+    unattended_origins_patterns:
+      - 'origin=Ubuntu,archive=${distro_codename}-security'
+      - 'o=Ubuntu,a=${distro_codename}'
+      - 'o=Ubuntu,a=${distro_codename}-updates'
+      - 'o=Ubuntu,a=${distro_codename}-proposed-updates'
+    unattended_ignore_apps_require_restart: true
+    unattended_dpkg_options: ["--force-confdef"]
+
+- gather_facts: no
   hosts:
     - gitlabstaging
     - gitlabprod
