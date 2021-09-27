@@ -1,3 +1,6 @@
+- include_vars: paths.yml  # From the top-level vars/ directory:
+  tags: always
+
 - name: "Single primary partition on {{ gitlab_vm_dedicated_disk }}"
   community.general.parted:
     device: "{{ gitlab_vm_dedicated_disk }}"
@@ -32,3 +35,11 @@
     fstype: "{{ gitlab_vm_dedicated_vg_fstype }}"
     state: mounted
   with_items: "{{ gitlab_vm_volumes }}"
+
+- name: "NFS mount point"
+  ansible.posix.mount:
+    path: "{{ gitlab_nfs_share.mount }}"
+    src: "{{ gitlab_nfs_share.remote }}"
+    fstype: "nfs"
+    opts: soft
+    state: mounted

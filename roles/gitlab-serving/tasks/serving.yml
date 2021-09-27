@@ -5,6 +5,7 @@
     # From the top-level vars/ directory:
     - hostnames.yml
     - database-names.yml
+    - paths.yml
 
 - name: "Configuration directories"
   file:
@@ -66,11 +67,11 @@
       - "{{ serving_gitlab_json_secrets_file }}:/etc/gitlab/gitlab-secrets.json"
       - "{{ serving_gitlab_rb_config_path }}:/etc/gitlab/gitlab.rb"
       # Precious
-      - "/srv/gitlab/data/git-data:/var/opt/gitlab/git-data"
-      - "/srv/gitlab/data/ssh_user_public_keys:/var/opt/gitlab/.ssh"
-      - "/srv/gitlab/data/shared:/var/opt/gitlab/gitlab-rails/shared"
-      - "/srv/gitlab/data/uploads:/var/opt/gitlab/gitlab-rails/uploads"
-      - "/srv/gitlab/data/gitlab-ci/builds:/var/opt/gitlab/gitlab-ci/builds"
+      - "{{ gitlab_nfs_data_topdir }}/git-data:/var/opt/gitlab/git-data"
+      - "{{ gitlab_nfs_data_topdir }}/ssh_user_public_keys:/var/opt/gitlab/.ssh"
+      - "{{ gitlab_nfs_data_topdir }}/shared:/var/opt/gitlab/gitlab-rails/shared"
+      - "{{ gitlab_nfs_data_topdir }}/uploads:/var/opt/gitlab/gitlab-rails/uploads"
+      - "{{ gitlab_nfs_data_topdir }}/gitlab-ci/builds:/var/opt/gitlab/gitlab-ci/builds"
       # UNIX sockets
       - "/srv/gitlab/run/redis-socket-{{ environment_name }}:/var/opt/gitlab/redis"
       - "/srv/gitlab/run/postgres-socket-{{ environment_name }}:/var/opt/gitlab/postgresql"

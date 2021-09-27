@@ -18,3 +18,7 @@ gitlab_vm_volumes:
     size: 100%FREE
 
 _gitlab_vm_device_mapper_path_of_item: "/dev/{{ gitlab_vm_dedicated_vg }}/{{ item.name }}"
+
+gitlab_nfs_share:
+  remote: cdh1files.epfl.ch:/u13477_cdh_emplus_001_files_nfs
+  mount: '{{ gitlab_nfs_data_topdir }}'
