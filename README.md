@@ -6,8 +6,9 @@
 - Be a member of the [`emplus-git-users` group](https://groups.epfl.ch/viewgroup?groupid=S28705)
 - Have ssh access to `cdhvm0024.xaas.epfl.ch`
 - Have the AWS CLI installed
-   - On Mac OS X: `brew install awscli`
-   - On Ubuntu or WSL: `apt-get install awscli`
+   - On Mac OS X: <pre>brew install awscli</pre>
+   - On Ubuntu or WSL: <pre>apt update; apt install awscli</pre>
+- (Optional) Install the `awscli-plugin-endpoint`: <pre>pip install awscli-plugin-endpoint</pre>
 
 ### Initialization part 1
 
