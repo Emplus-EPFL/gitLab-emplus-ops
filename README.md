@@ -9,9 +9,10 @@
    - On Mac OS X: <pre>brew install awscli</pre>
    - On Ubuntu or WSL: <pre>apt update
 apt install awscli</pre>
-- (Optional) Install the `awscli-plugin-endpoint`:
+- (Optional) Install the `awscli-plugin-endpoint` plug-in:
    - On Ubuntu or WSL: <pre>sudo apt install python3-pip
-sudo pip3 install awscli-plugin-endpoint</pre>
+sudo pip3 install awscli-plugin-endpoint
+aws configure set plugins.endpoint awscli_plugin_endpoint</pre>
 
 ### Initialization part 1
 
