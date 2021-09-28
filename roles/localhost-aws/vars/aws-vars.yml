@@ -1,5 +1,5 @@
 aws_cmd: >-
-  env - PATH=$PATH aws
+  env - PATH="$PATH" aws
 aws_config_file: >-
   {{ "~/.aws/config" | expanduser }}
 aws_credentials_file: >-
