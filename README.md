@@ -7,8 +7,11 @@
 - Have ssh access to `cdhvm0024.xaas.epfl.ch`
 - Have the AWS CLI installed
    - On Mac OS X: <pre>brew install awscli</pre>
-   - On Ubuntu or WSL: <pre>apt update; apt install awscli</pre>
-- (Optional) Install the `awscli-plugin-endpoint`: <pre>pip install awscli-plugin-endpoint</pre>
+   - On Ubuntu or WSL: <pre>apt update
+apt install awscli</pre>
+- (Optional) Install the `awscli-plugin-endpoint`:
+   - On Ubuntu or WSL: <pre>sudo apt install python3-pip
+sudo pip3 install awscli-plugin-endpoint</pre>
 
 ### Initialization part 1
 
